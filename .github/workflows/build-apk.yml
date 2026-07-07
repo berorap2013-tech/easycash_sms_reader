@@ -5,14 +5,13 @@ on:
   push:
     branches:
       - main
-      - master
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -25,12 +24,23 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          cache: true
 
-      - name: Flutter doctor
-        run: flutter doctor -v
+      - name: Install Android SDK 36
+        uses: android-actions/setup-android@v3
 
-      - name: Get dependencies
+      - name: Accept Android licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install required SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      - name: Clean Windows-only Gradle Java path if exists
+        run: |
+          if [ -f android/gradle.properties ]; then
+            sed -i '/org.gradle.java.home/d' android/gradle.properties
+          fi
+
+      - name: Flutter pub get
         run: flutter pub get
 
       - name: Build debug APK
